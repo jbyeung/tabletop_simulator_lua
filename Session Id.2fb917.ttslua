@@ -1,0 +1,121 @@
+mySessionID = ""
+
+--Color information for button text (r,g,b, values of 0-1)
+buttonFontColor = {0,0,0}
+--Color information for button background
+buttonColor = {1,1,1}
+--Change scale of button (Avoid changing if possible)
+buttonScale = {0.2,0.2,0.2}
+
+--This is the button placement information
+defaultButtonData = {
+    --Add editable text boxes
+    textbox = {
+        --[[
+        pos       = the position (pasted from the helper tool)
+        rows      = how many lines of text you want for this box
+        width     = how wide the text box is
+        font_size = size of text. This and "rows" effect overall height
+        label     = what is shown when there is no text. "" = nothing
+        value     = text entered into box. "" = nothing
+        alignment = Number to indicate how you want text aligned
+                    (1=Automatic, 2=Left, 3=Center, 4=Right, 5=Justified)
+        ]]
+        --session ID
+        {
+            pos       = {2.50,0.05,0.1},
+            rows      = 1,
+            width     = 17500,
+            font_size = 1200,
+            label     = "Enter ID to load or save character and ship data",
+            value     = "",
+            alignment = 2
+        },
+        --End of textboxes
+    }
+}
+
+--Save function
+function updateSave()
+    saved_data = JSON.encode(ref_buttonData)
+    if disableSave==true then saved_data="" end
+    self.script_state = saved_data
+end
+
+--Startup procedure
+function onload(saved_data)
+    spawnedButtonCount = 0
+
+    if disableSave==true then saved_data="" end
+    if saved_data ~= "" then
+        local loaded_data = JSON.decode(saved_data)
+        ref_buttonData = loaded_data
+    else
+        ref_buttonData = defaultButtonData
+    end
+
+    createTextbox()
+
+end
+
+--Click functions for buttons
+
+--Updates saved value for given text box
+function click_textbox(i, value, selected)
+    if selected == false then
+        ref_buttonData.textbox[i].value = value
+        mySessionID = value
+        updateSave()
+    end
+end
+
+--Dud function for if you have a background on a counter
+function click_none() end
+
+--Button creation
+
+function createTextbox()
+    for i, data in ipairs(ref_buttonData.textbox) do
+        --Sets up reference function
+        local funcName = "textbox"..i
+        local func = function(_,_,val,sel) click_textbox(i,val,sel) end
+        self.setVar(funcName, func)
+
+        self.createInput({
+            input_function = funcName,
+            function_owner = self,
+            label          = data.label,
+            alignment      = data.alignment,
+            position       = data.pos,
+            scale          = buttonScale,
+            width          = data.width,
+            height         = (data.font_size*data.rows)+24,
+            font_size      = data.font_size,
+            color          = bwuttonColor,
+            font_color     = buttonFontColor,
+            value          = data.value,
+        })
+    end
+end
+
+
+function spawnButton()
+    self.createButton({
+    label="Confirm", click_function="confirm_button", function_owner=self,
+    position={-1.66,0.05,-2.05}, width=300, height=200, font_size=60, color={0, 0.1, 0.9}
+    })
+    spawnedButtonCount = spawnedButtonCount + 1
+end
+
+
+function confirm_button()
+  print("Session ID set to" .. mySessionID)
+  updateSave()
+end
+
+function printTable(t)
+  for k,v in pairs(t) do
+    print(k)
+  end
+
+end

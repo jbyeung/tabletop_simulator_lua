@@ -1,0 +1,229 @@
+--Defining GUIDs
+playZone_GUID = "9ce87c"
+deck_GUID = "0093e6"
+discardZone_GUID = "9188d6"
+
+function onload()
+    --getting Objects from GUID
+    playZone = getObjectFromGUID(playZone_GUID)
+    deckZone = getObjectFromGUID(deck_GUID)
+    discardZone = getObjectFromGUID(discardZone_GUID)
+
+    --get Positions
+    playedPos = playZone.getPosition()
+    discardPos = discardZone.getPosition()
+    drawpos = deckZone.getPosition()
+    targetBottomPos = {drawpos[1], -1, drawpos[3]}
+
+    --variable to prevent flipped cards from running over
+    cards_played = 0
+
+    --Creating buttons
+    --creating the Draw One Button
+    self.createButton({
+        click_function = "draw",
+        function_owner = self,
+        label          = "1",
+        color          = {0.2, 0.1, 0.75},
+        position       = {0.30,-0.47,-0.65},
+        rotation       = {0,180,0},
+        width          = 150,
+        height         = 100,
+        font_size      = 40,
+        tooltip        = "Draw one ammo card"
+    })
+
+    self.createButton({
+        click_function = "draw2",
+        function_owner = self,
+        label          = "2",
+        color          = {0.2, 0.1, 0.75},
+        position       = {-0.05,-0.47,-0.65},
+        rotation       = {0,180,0},
+        width          = 150,
+        height         = 100,
+        font_size      = 40,
+        tooltip        = "Draw one ammo card"
+    })
+
+    self.createButton({
+        click_function = "draw3",
+        function_owner = self,
+        label          = "3",
+        color          = {0.2, 0.1, 0.75},
+        position       = {-0.40,-0.47,-0.65},
+        rotation       = {0,180,0},
+        width          = 150,
+        height         = 100,
+        font_size      = 40,
+        tooltip        = "Draw one ammo card"
+    })
+    --
+    -- self.createButton({
+    --     click_function = "discard",
+    --     function_owner = self,
+    --     label          = "Discard",
+    --     color          = {0.6, 0.05, 0.1},
+    --     position       = {0.45,-0.47,0.5},
+    --     rotation       = {0,180,0},
+    --     width          = 250,
+    --     height         = 55,
+    --     font_size      = 50,
+    --     tooltip        = "Discard one ammo card"
+    -- })
+
+    self.createButton({
+        click_function = "cleanup",
+        function_owner = self,
+        label          = "Cleanup",
+        color          = {0.5, 0.8, 0.5},
+        position       = {0.8,-0.47,-0.65},
+        rotation       = {0,180,0},
+        width          = 150,
+        height         = 100,
+        font_size      = 30,
+        tooltip        = "Discard all played ammo cards"
+    })
+
+    self.createButton({
+        click_function = "bottom",
+        function_owner = self,
+        label          = "Bottom",
+        color          = {1.0, 1.0, 1.0},
+        position       = {1.15,-0.47,-0.65},
+        rotation       = {0,180,0},
+        width          = 150,
+        height         = 100,
+        font_size      = 40,
+        tooltip        = "Bottoms the card on top of discard pile"
+    })
+
+end
+
+function getDeck()  --find the drawing deck and return it
+    possible_deck = deckZone.getObjects() --get all objects from draw Zone
+    draw_deck = nil
+
+    for k,v in pairs(possible_deck) do  --go through all Objects
+        if v.name != "Deck_Plate" and v.tag != nil then draw_deck = v end --if object found put it in draw_deck
+    end
+end
+
+function getDiscard()
+
+    possible_deck = discardZone.getObjects() --get all objects in the discardZone
+    discard_deck = nil
+    for k,v in pairs(possible_deck) do  --go through all Objects
+        if v.name != "Discard Pile" and v.tag != nil then discard_deck = v end --if object found save it in discard_deck
+    end
+end
+
+
+function draw()  --when Draw One Card button is pressed
+
+    if cards_played > 5 then
+      cards_played = 0
+    end
+
+    getDeck()
+
+    if draw_deck != nil and draw_deck.type == "Card" then
+      remainder = draw_deck
+    end
+
+    if remainder != nil then
+      remainder.flip()
+      remainder.setPositionSmooth(playedPos)
+      remainder = nil
+      return
+    end
+
+    if draw_deck == nil then
+        return
+    else
+        cards_played = cards_played + 1
+        targetPlace = {playedPos[1] - 2.5 + (1.3 * cards_played), playedPos[2], playedPos[3] - 0.35}
+        draw_deck.takeObject({index=0, position = targetPlace, rotation={0,180,0}})
+        if draw_deck.remainder != nil then
+          remainder = draw_deck.remainder
+        end
+    end
+end
+
+function draw2()
+  draw()
+  draw()
+end
+
+function draw3()
+  draw()
+  draw()
+  draw()
+end
+
+--
+--
+-- function discard()  --when Draw One Card button is pressed
+--     if remainder != nil then
+--       remainder.flip()
+--       remainder.setPositionSmooth(discardPos)
+--       return
+--     end
+--
+--     getDeck()
+--
+--     if draw_deck == nil then
+--         print("No cards to Draw", {1,1,0})
+--     else
+--         discardPos = discardZone.getPosition()
+--         targetPlace = {discardPos[1], discardPos[2], discardPos[3]}
+--         draw_deck.takeObject({index=0, position = targetPlace, rotation={0,180,0}})
+--         if draw_deck.remainder != nil then
+--           draw_deck = draw_deck.remainder
+--         end
+--     end
+-- end
+
+function cleanup()
+  possible_deck = playZone.getObjects() --get all objects from play Zone
+
+  for k,v in pairs(possible_deck) do  --go through all Objects
+      if v.locked != true and v.tag != nil and v.type == "Card" then
+          v.setPosition(discardPos)
+      end --if object found put it in draw_deck
+  end
+
+  cards_played = 0
+end
+
+function bottom()  --when Draw One Card button is pressed
+    getDiscard()
+
+    if discard_deck != nil and discard_deck.type == "Card" then
+      remainder = discard_deck
+    end
+
+    if remainder != nil then
+      remainder.flip()
+      remainder.setPosition(targetBottomPos)
+      remainder = nil
+      return
+    end
+
+    if discard_deck == nil then
+        print("No cards in discard pile", {1,1,0})
+    else
+      if discard_deck.remainder != nil then
+        remainder = discard_deck.remainder
+        remainder.flip()
+        remainder.setPosition(targetBottomPos)
+        remainder = nil
+      else
+        discard_deck.takeObject({index=discard_deck.getQuantity() - 1, position = targetBottomPos, flip = true, top = false})
+      end
+    end
+end
+
+function nilError()
+    print("Please place Deck in Deck Zone", {1,1,0})
+end
